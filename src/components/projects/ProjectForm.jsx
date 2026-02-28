@@ -13,6 +13,7 @@ export function ProjectForm({ onSuccess, onCancel, initialDeliveryDate, initialD
             status: '制作中'
         }
     );
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (!isEditMode && initialDeliveryDate) setFormData(prev => ({ ...prev, deliveryDate: initialDeliveryDate }));
@@ -24,9 +25,18 @@ export function ProjectForm({ onSuccess, onCancel, initialDeliveryDate, initialD
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.title || !formData.price || !formData.hours) return;
+        const nextErrors = {};
+
+        if (!formData.title.trim()) nextErrors.title = '案件名は必須です';
+        if (!String(formData.price).trim()) nextErrors.price = '単価は必須です';
+        if (!String(formData.hours).trim()) nextErrors.hours = '想定作業時間は必須です';
+
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length > 0) return;
+
         if (isEditMode) { editProject(formData.id, formData); }
         else { addProject(formData); }
+        setErrors({});
         if (!isModal) setFormData({ title: '', category: 'キャラデザ', price: '', hours: '', deliveryDate: new Date().toISOString().split('T')[0], status: '制作中' });
         if (onSuccess) onSuccess();
     };
@@ -41,6 +51,9 @@ export function ProjectForm({ onSuccess, onCancel, initialDeliveryDate, initialD
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
     };
 
     const inputClass = "block w-full pl-10 pr-3 py-3 border border-border rounded-xl bg-background text-foreground shadow-sm focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none";
@@ -56,7 +69,7 @@ export function ProjectForm({ onSuccess, onCancel, initialDeliveryDate, initialD
             </div>
 
             <div className={`${!isModal ? "rounded-2xl border border-border shadow-sm" : ""} bg-card overflow-hidden`}>
-                <form onSubmit={handleSubmit} className={`${isModal ? "py-4 space-y-6" : "p-6 md:p-8 space-y-8"}`}>
+                <form onSubmit={handleSubmit} noValidate className={`${isModal ? "py-4 space-y-6" : "p-6 md:p-8 space-y-8"}`}>
                     <div className="space-y-4">
                         <label className="block text-sm font-medium text-foreground">案件名</label>
                         <div className="relative">
@@ -64,6 +77,7 @@ export function ProjectForm({ onSuccess, onCancel, initialDeliveryDate, initialD
                             <input type="text" name="title" list="project-names" required value={formData.title} onChange={handleChange} placeholder="例: VTuberキャラデザイン" className={inputClass} />
                             <datalist id="project-names">{recentProjectNames.map((name, i) => (<option key={i} value={name} />))}</datalist>
                         </div>
+                        {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
@@ -105,6 +119,7 @@ export function ProjectForm({ onSuccess, onCancel, initialDeliveryDate, initialD
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><DollarSign className="h-5 w-5 text-foreground/40 group-focus-within:text-primary transition-colors" /></div>
                                 <input type="number" name="price" min="0" required value={formData.price} onChange={handleChange} placeholder="0" className={inputClass} />
                             </div>
+                            {errors.price && <p className="text-sm text-red-500">{errors.price}</p>}
                         </div>
                         <div className="space-y-4">
                             <label className="block text-sm font-medium text-foreground">想定作業時間 (h)</label>
@@ -112,6 +127,7 @@ export function ProjectForm({ onSuccess, onCancel, initialDeliveryDate, initialD
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Clock className="h-5 w-5 text-foreground/40 group-focus-within:text-primary transition-colors" /></div>
                                 <input type="number" name="hours" min="0" step="0.5" required value={formData.hours} onChange={handleChange} placeholder="0" className={inputClass} />
                             </div>
+                            {errors.hours && <p className="text-sm text-red-500">{errors.hours}</p>}
                         </div>
                     </div>
 
